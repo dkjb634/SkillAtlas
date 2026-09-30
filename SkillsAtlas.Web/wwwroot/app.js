@@ -167,9 +167,9 @@ function renderSkills() {
     const detailLabel = document.createElement("div");
     detailLabel.className = "detail-label";
     detailLabel.textContent = "FULL DESCRIPTION";
-    const content = document.createElement("pre");
+    const content = document.createElement("div");
     content.className = "skill-content";
-    content.textContent = skill.content || "No additional description is available for this skill.";
+    content.innerHTML = skill.contentHtml || "<p>No additional description is available for this skill.</p>";
     detailInner.append(detailLabel, content);
     detail.append(detailInner);
     detailClip.append(detail);
