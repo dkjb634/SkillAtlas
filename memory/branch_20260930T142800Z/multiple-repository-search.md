@@ -3,6 +3,7 @@
 - Date (UTC): 2026-09-30T14:28:00Z
 - Branch: `MultipleRepositories`
 - Target: `main`
+- PR: https://github.com/dkjb634/SkillAtlas/pull/6
 
 ## Summary
 Add a repository selection mode that lets users build and edit a list of Git repository URLs, then scan all selected repositories in one search and display the resulting combined skills library.
