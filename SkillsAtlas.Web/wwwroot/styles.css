@@ -191,6 +191,25 @@ h2 span { color: #8b77c0; }
   transform: translate3d(-100px, -100px, 0);
   will-change: transform;
 }
+
+.light-spot {
+  --light-x: 50vw;
+  --light-y: 50vh;
+  --light-radius: 100px;
+  --light-fade: 180px;
+  --light-edge: 270px;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--light-x) var(--light-y),
+    transparent 0 var(--light-radius),
+    rgba(0, 0, 0, .52) var(--light-fade),
+    #000 var(--light-edge)
+  );
+  will-change: background;
+}
 .cat-sprite {
   position: absolute;
   inset: 0;
