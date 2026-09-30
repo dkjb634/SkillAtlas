@@ -179,6 +179,71 @@ h2 span { color: #8b77c0; }
 .page-footer > span:last-child { font-weight: 500; letter-spacing: 0; }
 .page-footer .footer-star { margin-left: 5px; }
 
+.cursor-cat {
+  --cat-facing: 1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 72px;
+  height: 68px;
+  pointer-events: none;
+  transform: translate3d(-100px, -100px, 0);
+  will-change: transform;
+}
+.cat-sprite {
+  position: absolute;
+  inset: 0;
+  background: url("/assets/cat/catwalkx4.gif") center / 72px 60px no-repeat;
+  image-rendering: pixelated;
+  transform: scaleX(var(--cat-facing));
+  transform-origin: center bottom;
+}
+.cat-shadow {
+  position: absolute;
+  bottom: 3px;
+  left: 17px;
+  z-index: -1;
+  width: 40px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(24, 41, 35, .14);
+  filter: blur(2px);
+}
+.cat-zzz {
+  position: absolute;
+  top: -13px;
+  right: -3px;
+  z-index: 1;
+  display: none;
+  color: #7968a8;
+  font: 800 16px/1 var(--font-display);
+  text-shadow: 0 1px #fff;
+}
+.cat-zzz span { position: absolute; top: -9px; left: 12px; font-size: 12px; }
+.cat-zzz span:last-child { top: -16px; left: 22px; font-size: 9px; }
+.cursor-cat.is-sitting .cat-sprite,
+.cursor-cat.is-sleeping .cat-sprite {
+  width: 60px;
+  height: 64px;
+  left: 6px;
+  background-image: url("/assets/cat/catspritesx4.gif");
+  background-size: 548px 200px;
+  background-position: -184px -4px;
+  background-repeat: no-repeat;
+}
+.cursor-cat.is-sleeping .cat-sprite {
+  transform: translateY(10px) rotate(calc(var(--cat-facing) * 8deg)) scaleX(var(--cat-facing)) scaleY(.76);
+  transform-origin: center bottom;
+}
+.cursor-cat.is-sleeping .cat-zzz { display: block; animation: cat-dream 1.8s ease-in-out infinite; }
+.cursor-cat.is-sleeping .cat-shadow { width: 47px; left: 13px; }
+@keyframes cat-dream { 50% { opacity: .35; transform: translate(4px, -5px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-cat { display: none; }
+}
+
 .similar-view { min-height: 620px; padding-top: 65px; animation: appear .35s ease both; }
 .similar-heading { display: flex; align-items: end; justify-content: space-between; gap: 35px; margin-bottom: 34px; }
 .similar-heading h1 { margin-bottom: 16px; font-size: clamp(45px, 6vw, 66px); }

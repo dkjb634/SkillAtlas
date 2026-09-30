@@ -13,6 +13,8 @@ let skills = [];
 let expandedSkill = null;
 let similarSkillsAreStale = true;
 
+setupCursorCat();
+
 const libraryTab = document.querySelector("#library-tab");
 const similarTab = document.querySelector("#similar-tab");
 const similarView = document.querySelector("#similar-view");
@@ -271,4 +273,63 @@ function renderSimilarSkills(result) {
     widget.append(header, list);
     similarGroups.append(widget);
   });
+}
+
+function setupCursorCat() {
+  const cat = document.querySelector("#cursor-cat");
+  if (!cat || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const arrivalRadius = 100;
+  const catWidth = 72;
+  const catHeight = 68;
+  const position = { x: 28, y: Math.max(20, window.innerHeight - catHeight - 28) };
+  const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  let lastTime = performance.now();
+  let arrivedAt = lastTime;
+  let state = "sleeping";
+
+  const setTarget = (event) => {
+    target.x = event.clientX;
+    target.y = event.clientY;
+  };
+
+  window.addEventListener("pointermove", setTarget, { passive: true });
+  window.addEventListener("pointerdown", setTarget, { passive: true });
+
+  const animate = (time) => {
+    const elapsed = Math.min((time - lastTime) / 1000, .05);
+    lastTime = time;
+    const centerX = position.x + catWidth / 2;
+    const centerY = position.y + catHeight / 2;
+    const dx = target.x - centerX;
+    const dy = target.y - centerY;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance > arrivalRadius) {
+      if (state !== "walking") {
+        state = "walking";
+        cat.className = "cursor-cat is-walking";
+      }
+      const speed = Math.min(360, 115 + distance * .38);
+      position.x += (dx / distance) * speed * elapsed;
+      position.y += (dy / distance) * speed * elapsed;
+      if (Math.abs(dx) > 2) cat.style.setProperty("--cat-facing", dx < 0 ? -1 : 1);
+    } else {
+      if (state === "walking") {
+        state = "sitting";
+        arrivedAt = time;
+        cat.className = "cursor-cat is-sitting";
+      } else if (state === "sitting" && time - arrivedAt > 900) {
+        state = "sleeping";
+        cat.className = "cursor-cat is-sleeping";
+      }
+    }
+
+    position.x = Math.max(0, Math.min(window.innerWidth - catWidth, position.x));
+    position.y = Math.max(0, Math.min(window.innerHeight - catHeight, position.y));
+    cat.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+    requestAnimationFrame(animate);
+  };
+
+  requestAnimationFrame(animate);
 }
