@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f2">
+  <title>Skills Atlas — Explore repository skills</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Skills Atlas home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>skills<span class="brand-light">atlas</span></span>
+      </a>
+      <div class="topbar-note"><span class="live-dot"></span> A field guide to AI skills</div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> DISCOVER WHAT A REPOSITORY CAN DO</div>
+          <h1 id="hero-title">Good skills are<br>worth <span>finding.</span></h1>
+          <p class="hero-description">Explore the capabilities tucked inside any Git repository. Browse the short version, then open a skill to see how it works.</p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit orbit-outer"></div>
+          <div class="orbit orbit-inner"></div>
+          <div class="orbit-core"><span>✳</span></div>
+          <span class="orbit-spark spark-one">✦</span>
+          <span class="orbit-spark spark-two">✳</span>
+          <span class="orbit-spark spark-three">·</span>
+        </div>
+      </section>
+
+      <section class="search-panel" aria-label="Choose a repository">
+        <div class="search-panel-copy">
+          <span class="step-label">START EXPLORING <span>01</span></span>
+          <label for="repository-input">Repository URL</label>
+          <p>We’ll find every <code>SKILL.md</code> and make it easy to explore.</p>
+        </div>
+        <form id="repository-form" class="repository-form">
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.9a3.4 3.4 0 0 0-.9-2.7c3-.3 6.1-1.5 6.1-6.7a5.2 5.2 0 0 0-1.4-3.6 4.8 4.8 0 0 0-.1-3.6s-1.2-.4-3.8 1.4a13.2 13.2 0 0 0-6.9 0C5.4 1.1 4.2 1.5 4.2 1.5a4.8 4.8 0 0 0-.1 3.6A5.2 5.2 0 0 0 2.7 8.7c0 5.2 3.1 6.4 6.1 6.7A3.4 3.4 0 0 0 8 18.1V22"/></svg>
+            <input id="repository-input" name="repository" type="text" inputmode="url" placeholder="https://github.com/JetBrains/kotlin" autocomplete="url" required>
+          </div>
+          <button id="scan-button" class="scan-button" type="submit">
+            <span class="button-label">Explore repository</span>
+            <span class="button-icon" aria-hidden="true">↗</span>
+          </button>
+        </form>
+        <div class="search-footer"><span>GitHub, GitLab, or any public Git repository</span><span class="private-note"><span aria-hidden="true">◈</span> Saved to your local skills library</span></div>
+      </section>
+
+      <section id="status-region" class="status-region" aria-live="polite">
+        <div id="loading-state" class="loading-state" hidden><span class="loader"></span><span>Reading the repository and finding its skills…</span></div>
+        <div id="error-state" class="error-state" hidden></div>
+      </section>
+
+      <section id="results" class="results" hidden aria-labelledby="results-title">
+        <div class="results-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> YOUR SKILL LIBRARY</div>
+            <h2 id="results-title">Your skill library</h2>
+            <p id="repository-meta" class="repository-meta"></p>
+            <p id="database-location" class="database-location"></p>
+          </div>
+          <div class="results-tools">
+            <span id="skill-count" class="skill-count"></span>
+            <label class="filter-box" for="skill-filter">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+              <input id="skill-filter" type="search" placeholder="Filter skills…" autocomplete="off">
+            </label>
+          </div>
+        </div>
+        <div id="skill-list" class="skill-list"></div>
+        <div id="no-filter-results" class="no-filter-results" hidden>No skills match that filter.</div>
+        <footer class="results-footer"><span>SKILL DETAIL</span><span>Click a skill to expand its full description</span><span class="footer-star">✳</span></footer>
+      </section>
+
+      <section id="welcome" class="welcome-card" aria-label="How it works">
+        <div class="welcome-icon" aria-hidden="true">✳</div>
+        <div><strong>Your next favorite skill is in there somewhere.</strong><p>Paste a repository above to start exploring. Click any skill to expand its full description, or open its file directly.</p></div>
+        <span class="welcome-arrow" aria-hidden="true">↗</span>
+      </section>
+    </main>
+
+    <footer class="page-footer"><span>SKILLS ATLAS <span class="footer-year">· BUILT FOR THE CURIOUS</span></span><span>One repository at a time <span class="footer-star">✳</span></span></footer>
+  </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 namespace SkillsAtlas;
 
-internal sealed record SkillEntry(
+public sealed record SkillEntry(
     string RepositoryName,
     string RepositoryUrl,
     string Name,
