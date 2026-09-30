@@ -15,6 +15,7 @@ try
 
     if (result.Skills.Count == 0)
     {
+        // test CICD
         Console.WriteLine("No SKILL.md files were found.");
         return 0;
     }
