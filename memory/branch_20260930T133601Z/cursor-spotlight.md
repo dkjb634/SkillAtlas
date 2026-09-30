@@ -3,7 +3,7 @@
 - Date (UTC): 2026-09-30T13:36:01Z
 - Branch: `AddLightSpotToCursor`
 - Target: `main`
-- PR: pending
+- PR: https://github.com/dkjb634/SkillAtlas/pull/4
 
 ## Summary
 
