@@ -32,7 +32,7 @@ form.addEventListener("submit", async (event) => {
     if (!response.ok) throw new Error(payload.message || "The repository could not be read.");
     renderLibrary(payload, payload.searchedRepository
       ? `Searched ${payload.searchedRepository}`
-      : null);
+      : null, true);
     if (skills.length > previousCount) {
       document.querySelector(".skill-card:last-child")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
@@ -51,8 +51,7 @@ async function loadSavedSkills() {
     const response = await fetch("/api/skills");
     if (!response.ok) throw new Error("The saved skill library could not be loaded.");
     const library = await response.json();
-    if (library.skills?.length) renderLibrary(library, "Loaded from your SQLite library");
-    else document.querySelector("#database-location").textContent = `SQLite database: ${library.databasePath}`;
+    renderLibrary(library, library.skills?.length ? "Loaded from your SQLite library" : null);
   } catch (error) {
     errorState.textContent = error.message || "The saved skill library could not be loaded.";
     errorState.hidden = false;
@@ -66,10 +65,9 @@ function setLoading(isLoading) {
   if (isLoading) errorState.hidden = true;
 }
 
-function renderLibrary(library, sourceLabel) {
+function renderLibrary(library, sourceLabel, shouldScroll = false) {
   skills = library.skills || [];
   expandedSkill = null;
-  filterInput.value = "";
   const repositoryCount = new Set(skills.map((skill) => skill.repositoryUrl)).size;
   document.querySelector("#repository-meta").textContent = sourceLabel
     ? `${sourceLabel} · ${skills.length} saved ${skills.length === 1 ? "skill" : "skills"} across ${repositoryCount} ${repositoryCount === 1 ? "repository" : "repositories"}`
@@ -79,20 +77,23 @@ function renderLibrary(library, sourceLabel) {
   welcome.hidden = true;
   results.hidden = false;
   renderSkills();
-  results.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (shouldScroll) results.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSkills() {
   const filter = filterInput.value.trim().toLocaleLowerCase();
   const visibleSkills = skills.filter((skill) =>
-    `${skill.name} ${skill.shortDescription} ${skill.relativeFilePath}`.toLocaleLowerCase().includes(filter)
+    skill.name.toLocaleLowerCase().includes(filter)
   );
 
   skillList.replaceChildren();
   noFilterResults.textContent = skills.length === 0
-    ? "No SKILL.md files were found in this repository."
-    : "No skills match that filter.";
+    ? "No saved skills yet. Explore a repository to add some."
+    : `No skill names match “${filterInput.value.trim()}”.`;
   noFilterResults.hidden = visibleSkills.length !== 0;
+  document.querySelector("#skill-count").textContent = filter
+    ? `${visibleSkills.length} of ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`
+    : `${skills.length} ${skills.length === 1 ? "skill" : "skills"}`;
 
   visibleSkills.forEach((skill, index) => {
     const originalIndex = skills.indexOf(skill);
