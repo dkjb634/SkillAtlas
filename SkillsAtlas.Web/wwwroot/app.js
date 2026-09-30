@@ -11,6 +11,18 @@ const filterInput = document.querySelector("#skill-filter");
 const noFilterResults = document.querySelector("#no-filter-results");
 let skills = [];
 let expandedSkill = null;
+let similarSkillsAreStale = true;
+
+const libraryTab = document.querySelector("#library-tab");
+const similarTab = document.querySelector("#similar-tab");
+const similarView = document.querySelector("#similar-view");
+const similarGroups = document.querySelector("#similar-groups");
+const similarLoading = document.querySelector("#similar-loading");
+const similarError = document.querySelector("#similar-error");
+const noSimilarResults = document.querySelector("#no-similar-results");
+
+libraryTab.addEventListener("click", () => switchView("library"));
+similarTab.addEventListener("click", () => switchView("similar"));
 
 const initialLoad = loadSavedSkills();
 
@@ -33,6 +45,7 @@ form.addEventListener("submit", async (event) => {
     renderLibrary(payload, payload.searchedRepository
       ? `Searched ${payload.searchedRepository}`
       : null);
+    similarSkillsAreStale = true;
     if (skills.length > previousCount) {
       document.querySelector(".skill-card:last-child")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
@@ -176,5 +189,85 @@ function renderSkills() {
     detailGrid.append(detailClip);
     card.append(row, detailGrid);
     skillList.append(card);
+  });
+}
+
+function switchView(view) {
+  const showSimilar = view === "similar";
+  libraryTab.classList.toggle("is-active", !showSimilar);
+  similarTab.classList.toggle("is-active", showSimilar);
+  libraryTab.setAttribute("aria-selected", String(!showSimilar));
+  similarTab.setAttribute("aria-selected", String(showSimilar));
+  document.querySelectorAll("main > section:not(#similar-view)").forEach((section) => {
+    section.classList.toggle("view-hidden", showSimilar);
+  });
+  similarView.hidden = !showSimilar;
+  if (showSimilar && similarSkillsAreStale) loadSimilarSkills();
+}
+
+async function loadSimilarSkills() {
+  similarLoading.hidden = false;
+  similarError.hidden = true;
+  noSimilarResults.hidden = true;
+  similarGroups.replaceChildren();
+  try {
+    const response = await fetch("/api/similar-skills");
+    if (!response.ok) throw new Error("Similar skills could not be analyzed.");
+    const result = await response.json();
+    renderSimilarSkills(result);
+    similarSkillsAreStale = false;
+  } catch (error) {
+    similarError.textContent = error.message || "Similar skills could not be analyzed.";
+    similarError.hidden = false;
+  } finally {
+    similarLoading.hidden = true;
+  }
+}
+
+function renderSimilarSkills(result) {
+  const groups = result.groups || [];
+  const matchedCount = groups.reduce((total, group) => total + group.skills.length, 0);
+  document.querySelector("#similar-summary").textContent = groups.length
+    ? `${groups.length} ${groups.length === 1 ? "group" : "groups"} · ${matchedCount} related skills · ${result.analyzedSkillCount} analyzed`
+    : `${result.analyzedSkillCount} ${result.analyzedSkillCount === 1 ? "skill" : "skills"} analyzed`;
+  noSimilarResults.hidden = groups.length !== 0;
+
+  groups.forEach((group, groupIndex) => {
+    const widget = document.createElement("article");
+    widget.className = "similar-widget";
+    const header = document.createElement("header");
+    header.className = "similar-widget-header";
+    const label = document.createElement("div");
+    label.innerHTML = `<span>GROUP ${String(groupIndex + 1).padStart(2, "0")}</span><strong>${group.skills.length} similar skills</strong>`;
+    const score = document.createElement("span");
+    score.className = "match-pill";
+    score.textContent = `${Math.round(Math.max(...group.skills.map((item) => item.similarity)) * 100)}% strongest match`;
+    header.append(label, score);
+
+    const list = document.createElement("div");
+    list.className = "similar-widget-list";
+    group.skills.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "similar-skill";
+      const copy = document.createElement("div");
+      copy.className = "similar-skill-copy";
+      const name = document.createElement("a");
+      name.href = item.skill.fileUrl;
+      name.target = "_blank";
+      name.rel = "noopener noreferrer";
+      name.textContent = item.skill.name;
+      const repository = document.createElement("span");
+      repository.textContent = item.skill.repositoryName;
+      const description = document.createElement("p");
+      description.textContent = item.skill.shortDescription;
+      copy.append(name, repository, description);
+      const meter = document.createElement("div");
+      meter.className = "similar-meter";
+      meter.innerHTML = `<strong>${Math.round(item.similarity * 100)}%</strong><span><i style="width: ${Math.round(item.similarity * 100)}%"></i></span>`;
+      row.append(copy, meter);
+      list.append(row);
+    });
+    widget.append(header, list);
+    similarGroups.append(widget);
   });
 }

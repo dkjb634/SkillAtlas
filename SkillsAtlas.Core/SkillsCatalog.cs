@@ -96,4 +96,22 @@ public sealed class SkillsCatalog
             _databaseLock.Release();
         }
     }
+
+    public async Task<SimilarSkillsResult> GetSimilarSkillsAsync()
+    {
+        await _databaseLock.WaitAsync();
+        try
+        {
+            using var database = new SkillsDatabase(_databasePath);
+            var skills = database.GetAllSkills();
+            return new SimilarSkillsResult(
+                SkillSimilarityAnalyzer.FindGroups(skills),
+                skills.Count,
+                _databasePath);
+        }
+        finally
+        {
+            _databaseLock.Release();
+        }
+    }
 }

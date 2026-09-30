@@ -18,6 +18,10 @@
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
         <span>skills<span class="brand-light">atlas</span></span>
       </a>
+      <nav class="view-tabs" aria-label="Main views">
+        <button id="library-tab" class="view-tab is-active" type="button" aria-selected="true">Skill library</button>
+        <button id="similar-tab" class="view-tab" type="button" aria-selected="false">Similar skills</button>
+      </nav>
       <div class="topbar-note"><span class="live-dot"></span> A field guide to AI skills</div>
     </header>
 
@@ -87,6 +91,25 @@
         <div class="welcome-icon" aria-hidden="true">✳</div>
         <div><strong>Your next favorite skill is in there somewhere.</strong><p>Paste a repository above to start exploring. Click any skill to expand its full description, or open its file directly.</p></div>
         <span class="welcome-arrow" aria-hidden="true">↗</span>
+      </section>
+
+      <section id="similar-view" class="similar-view" hidden aria-labelledby="similar-title">
+        <div class="similar-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> DESCRIPTION MATCHES</div>
+            <h1 id="similar-title">Skills that think<br><span>alike.</span></h1>
+            <p>Groups are calculated from the descriptions in your local skills database using TF-IDF and cosine similarity.</p>
+          </div>
+          <div id="similar-summary" class="similar-summary"></div>
+        </div>
+        <div id="similar-loading" class="loading-state" hidden><span class="loader"></span><span>Comparing saved skill descriptions…</span></div>
+        <div id="similar-error" class="error-state" hidden></div>
+        <div id="similar-groups" class="similar-groups"></div>
+        <div id="no-similar-results" class="no-similar-results" hidden>
+          <span>✳</span>
+          <h2>No close matches yet</h2>
+          <p>Add more skills to your library, or skills with more detailed descriptions, and check again.</p>
+        </div>
       </section>
     </main>
 
