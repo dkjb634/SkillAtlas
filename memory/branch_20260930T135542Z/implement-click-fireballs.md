@@ -3,6 +3,7 @@
 - Date (UTC): 2026-09-30T13:55:42Z
 - Branch: `ImplementFireballs`
 - Target: `main`
+- PR: https://github.com/dkjb634/SkillAtlas/pull/5
 
 ## Summary
 
