@@ -210,6 +210,105 @@ h2 span { color: #8b77c0; }
   );
   will-change: background;
 }
+
+.fireball-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  overflow: hidden;
+  pointer-events: none;
+}
+.meteor {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 8px rgba(255, 104, 28, .95));
+  will-change: transform, opacity;
+}
+.meteor::before {
+  position: absolute;
+  inset: 1px;
+  border: 2px solid #ffd071;
+  border-radius: 48% 52% 58% 42%;
+  background: radial-gradient(circle at 65% 68%, #fff7ba 0 13%, #ff9f2f 28%, #d84316 64%, #51271d 100%);
+  box-shadow: inset -3px 3px 2px rgba(70, 20, 8, .35), 0 0 13px #ff7425;
+  content: "";
+  transform: rotate(28deg);
+}
+.meteor::after {
+  position: absolute;
+  top: 8px;
+  right: 13px;
+  width: var(--meteor-tail, 145px);
+  height: 9px;
+  border-radius: 999px 0 0 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 57, 13, .08) 18%, rgba(255, 135, 30, .62) 68%, #ffe29a);
+  filter: blur(1px);
+  content: "";
+  transform: rotate(var(--meteor-angle)) translateY(-50%);
+  transform-origin: right center;
+}
+.impact {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+}
+.impact-flash,
+.impact-ring,
+.impact-boom,
+.impact-spark { position: absolute; left: 0; top: 0; }
+.impact-flash {
+  width: 94px;
+  height: 94px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbd0 0 7%, #ffd43b 18%, #ff6b19 42%, rgba(207, 33, 8, .58) 57%, transparent 72%);
+  filter: drop-shadow(0 0 18px #ff671c);
+  animation: impact-flash .55s ease-out both;
+}
+.impact-ring {
+  width: 30px;
+  height: 30px;
+  border: 5px solid rgba(255, 152, 39, .9);
+  border-radius: 50%;
+  animation: impact-ring .7s ease-out both;
+}
+.impact-ring:nth-child(3) { animation-delay: .07s; }
+.impact-boom {
+  color: #fff6a8;
+  font: 900 29px/.8 var(--font-display);
+  letter-spacing: -2px;
+  text-shadow: 2px 2px 0 #c52d12, -2px -2px 0 #c52d12, 0 0 8px #ff6d16;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  animation: impact-boom .8s cubic-bezier(.15,.85,.25,1) both;
+}
+.impact-spark {
+  width: 7px;
+  height: 23px;
+  border-radius: 999px;
+  background: linear-gradient(#fff4a5, #ff5a16 60%, transparent);
+  box-shadow: 0 0 5px #ff7b19;
+  transform-origin: 50% 0;
+  animation: impact-spark .65s ease-out both;
+}
+@keyframes impact-flash {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(.15); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.45); }
+}
+@keyframes impact-ring {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(.25); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(4.2); }
+}
+@keyframes impact-boom {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(.25); }
+  30% { opacity: 1; transform: translate(-50%, -74%) rotate(-8deg) scale(1.28); }
+  65% { opacity: 1; transform: translate(-50%, -86%) rotate(-5deg) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -130%) rotate(2deg) scale(.82); }
+}
+@keyframes impact-spark {
+  from { opacity: 1; transform: rotate(var(--spark-angle)) translateY(5px) scaleY(.45); }
+  to { opacity: 0; transform: rotate(var(--spark-angle)) translateY(var(--spark-distance)) scaleY(1); }
+}
 .cat-sprite {
   position: absolute;
   inset: 0;
@@ -261,6 +360,8 @@ h2 span { color: #8b77c0; }
 
 @media (prefers-reduced-motion: reduce) {
   .cursor-cat { display: none; }
+  .meteor { display: none; }
+  .impact-flash, .impact-ring, .impact-boom, .impact-spark { animation-duration: .12s; }
 }
 
 .similar-view { min-height: 620px; padding-top: 65px; animation: appear .35s ease both; }

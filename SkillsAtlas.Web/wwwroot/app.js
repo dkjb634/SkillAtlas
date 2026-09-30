@@ -15,6 +15,7 @@ let similarSkillsAreStale = true;
 
 setupLightSpot();
 setupCursorCat();
+setupFireballs();
 
 const libraryTab = document.querySelector("#library-tab");
 const similarTab = document.querySelector("#similar-tab");
@@ -369,4 +370,104 @@ function setupCursorCat() {
   };
 
   requestAnimationFrame(animate);
+}
+
+function setupFireballs() {
+  const layer = document.querySelector("#fireball-layer");
+  if (!layer) return;
+
+  let audioContext;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  const playExplosion = () => {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    audioContext ||= new AudioContext();
+    if (audioContext.state === "suspended") audioContext.resume();
+
+    const now = audioContext.currentTime;
+    const duration = .42;
+    const master = audioContext.createGain();
+    master.gain.setValueAtTime(.32, now);
+    master.gain.exponentialRampToValueAtTime(.001, now + duration);
+    master.connect(audioContext.destination);
+
+    const oscillator = audioContext.createOscillator();
+    const oscillatorGain = audioContext.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(105, now);
+    oscillator.frequency.exponentialRampToValueAtTime(38, now + duration);
+    oscillatorGain.gain.setValueAtTime(.8, now);
+    oscillatorGain.gain.exponentialRampToValueAtTime(.001, now + duration);
+    oscillator.connect(oscillatorGain).connect(master);
+    oscillator.start(now);
+    oscillator.stop(now + duration);
+
+    const frameCount = Math.floor(audioContext.sampleRate * duration);
+    const buffer = audioContext.createBuffer(1, frameCount, audioContext.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let index = 0; index < frameCount; index += 1) {
+      samples[index] = (Math.random() * 2 - 1) * (1 - index / frameCount);
+    }
+    const noise = audioContext.createBufferSource();
+    const noiseFilter = audioContext.createBiquadFilter();
+    noise.buffer = buffer;
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.setValueAtTime(1300, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(120, now + duration);
+    noise.connect(noiseFilter).connect(master);
+    noise.start(now);
+  };
+
+  const explode = (x, y) => {
+    playExplosion();
+    const impact = document.createElement("div");
+    impact.className = "impact";
+    impact.style.left = `${x}px`;
+    impact.style.top = `${y}px`;
+    impact.innerHTML = '<span class="impact-flash"></span><span class="impact-ring"></span><span class="impact-ring"></span><span class="impact-boom">BOOM!</span>';
+    for (let index = 0; index < 10; index += 1) {
+      const spark = document.createElement("span");
+      spark.className = "impact-spark";
+      spark.style.setProperty("--spark-angle", `${index * 36 + Math.random() * 16 - 8}deg`);
+      spark.style.setProperty("--spark-distance", `${42 + Math.random() * 48}px`);
+      impact.append(spark);
+    }
+    layer.append(impact);
+    window.setTimeout(() => impact.remove(), 900);
+  };
+
+  window.addEventListener("pointerdown", (event) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    const x = event.clientX;
+    const y = event.clientY;
+    if (reducedMotion.matches) {
+      explode(x, y);
+      return;
+    }
+
+    const startX = Math.max(-80, Math.min(window.innerWidth + 80, x + (Math.random() - .5) * 520));
+    const startY = -90;
+    const dx = x - startX;
+    const dy = y - startY;
+    const meteor = document.createElement("span");
+    meteor.className = "meteor";
+    meteor.style.left = `${startX - 11}px`;
+    meteor.style.top = `${startY - 11}px`;
+    meteor.style.setProperty("--meteor-angle", `${Math.atan2(dy, dx) * 180 / Math.PI}deg`);
+    meteor.style.setProperty("--meteor-tail", `${Math.min(190, Math.max(105, Math.hypot(dx, dy) * .23))}px`);
+    layer.append(meteor);
+
+    const duration = Math.min(850, Math.max(430, Math.hypot(dx, dy) * .72));
+    const flight = meteor.animate([
+      { transform: "translate3d(0, 0, 0) scale(.72)", opacity: 0 },
+      { transform: `translate3d(${dx * .08}px, ${dy * .08}px, 0) scale(1)`, opacity: 1, offset: .12 },
+      { transform: `translate3d(${dx}px, ${dy}px, 0) scale(1.08)`, opacity: 1 }
+    ], { duration, easing: "cubic-bezier(.34,.05,.78,.38)", fill: "forwards" });
+
+    flight.finished.then(() => {
+      meteor.remove();
+      explode(x, y);
+    }).catch(() => meteor.remove());
+  }, { passive: true });
 }
