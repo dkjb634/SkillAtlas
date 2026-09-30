@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Skills Atlas Demo"
+  short_description: "Record the complete Skills Atlas browser demo"
+  default_prompt: "Use $record-skills-atlas-demo to record the full Skills Atlas repository-search demo."
