@@ -13,6 +13,12 @@ app.MapGet("/api/skills", async (SkillsCatalog catalog) =>
     return Results.Ok(library);
 });
 
+app.MapGet("/api/similar-skills", async (SkillsCatalog catalog) =>
+{
+    var result = await catalog.GetSimilarSkillsAsync();
+    return Results.Ok(result);
+});
+
 app.MapPost("/api/skills", async (ScanRequest request, SkillsCatalog catalog) =>
 {
     var repository = request.Repository?.Trim();
