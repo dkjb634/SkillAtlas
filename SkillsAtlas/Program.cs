@@ -8,27 +8,19 @@ if (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]))
 
 try
 {
-    using var checkout = await RepositoryCheckout.OpenAsync(args[0]);
-    var skills = SkillScanner.Scan(checkout);
-    var databasePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "SkillsAtlas",
-        "skills.db");
+    var result = await new SkillsCatalog().FetchAsync(args[0]);
 
-    using var database = new SkillsDatabase(databasePath);
-    database.Save(skills);
-    var storedSkills = database.GetSkills(checkout.RepositoryUrl, checkout.CommitHash);
+    Console.WriteLine($"Found {result.Skills.Count} skill(s) in {result.RepositoryName} ({result.CommitHash[..Math.Min(12, result.CommitHash.Length)]}).");
+    Console.WriteLine($"SQLite database: {result.DatabasePath}");
 
-    Console.WriteLine($"Found {skills.Count} skill(s) in {checkout.RepositoryName} ({checkout.CommitHash[..Math.Min(12, checkout.CommitHash.Length)]}).");
-    Console.WriteLine($"SQLite database: {databasePath}");
-
-    if (storedSkills.Count == 0)
+    if (result.Skills.Count == 0)
     {
+        // test CICD
         Console.WriteLine("No SKILL.md files were found.");
         return 0;
     }
 
-    SkillsTerminalUi.Run(checkout.RepositoryName, storedSkills);
+    SkillsTerminalUi.Run(result.RepositoryName, result.Skills);
     return 0;
 }
 catch (Exception exception)

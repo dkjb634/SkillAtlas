@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace SkillsAtlas;
@@ -58,23 +57,59 @@ internal sealed class SkillsDatabase : IDisposable
             CREATE INDEX IF NOT EXISTS IX_Skills_RepositoryCommit
                 ON Skills (RepositoryUrl, CommitHash);
             """);
+
+        // Keep one canonical row for each skill definition before enforcing the
+        // same rule for future inserts. The oldest row retains its database order.
+        Execute("""
+            DELETE FROM Skills
+            WHERE Id NOT IN (
+                SELECT MIN(Id)
+                FROM Skills
+                GROUP BY SkillName, Content
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS UX_Skills_Name_Content
+                ON Skills (SkillName, Content);
+            """);
     }
 
     public void Save(IReadOnlyCollection<SkillEntry> skills)
     {
+        const string insert = """
+            INSERT OR IGNORE INTO Skills
+                (RepositoryName, RepositoryUrl, SkillName, ShortDescription, RelativeFilePath, CommitHash, Content, FileUrl)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);
+            """;
+
         Execute("BEGIN TRANSACTION;");
         try
         {
-            foreach (var skill in skills)
+            var result = Native.sqlite3_prepare_v2(_database, insert, -1, out var statement, IntPtr.Zero);
+            Check(result);
+
+            try
             {
-                Execute($"""
-                    INSERT OR IGNORE INTO Skills
-                        (RepositoryName, RepositoryUrl, SkillName, ShortDescription, RelativeFilePath, CommitHash, Content, FileUrl)
-                    VALUES
-                        ({Quote(skill.RepositoryName)}, {Quote(skill.RepositoryUrl)}, {Quote(skill.Name)},
-                         {Quote(skill.ShortDescription)}, {Quote(skill.RelativeFilePath)}, {Quote(skill.CommitHash)},
-                         {Quote(skill.Content)}, {Quote(skill.FileUrl)});
-                    """);
+                foreach (var skill in skills)
+                {
+                    BindText(statement, 1, skill.RepositoryName);
+                    BindText(statement, 2, skill.RepositoryUrl);
+                    BindText(statement, 3, skill.Name);
+                    BindText(statement, 4, skill.ShortDescription);
+                    BindText(statement, 5, skill.RelativeFilePath);
+                    BindText(statement, 6, skill.CommitHash);
+                    BindText(statement, 7, skill.Content);
+                    BindText(statement, 8, skill.FileUrl);
+
+                    result = Native.sqlite3_step(statement);
+                    if (result != SqliteDone)
+                        Check(result);
+
+                    Check(Native.sqlite3_reset(statement));
+                    Check(Native.sqlite3_clear_bindings(statement));
+                }
+            }
+            finally
+            {
+                Native.sqlite3_finalize(statement);
             }
 
             Execute("COMMIT;");
@@ -94,13 +129,30 @@ internal sealed class SkillsDatabase : IDisposable
             WHERE RepositoryUrl = ?1 AND CommitHash = ?2
             ORDER BY SkillName COLLATE NOCASE;
             """;
-        var result = Native.sqlite3_prepare_v2(_database, query, -1, out var statement, IntPtr.Zero);
-        Check(result);
-
-        try
+        return ReadSkills(query, statement =>
         {
             BindText(statement, 1, repositoryUrl);
             BindText(statement, 2, commitHash);
+        });
+    }
+
+    public List<SkillEntry> GetAllSkills()
+    {
+        const string query = """
+            SELECT RepositoryName, RepositoryUrl, SkillName, ShortDescription, RelativeFilePath, CommitHash, Content, FileUrl
+            FROM Skills
+            ORDER BY Id ASC;
+            """;
+        return ReadSkills(query);
+    }
+
+    private List<SkillEntry> ReadSkills(string query, Action<IntPtr>? bind = null)
+    {
+        var result = Native.sqlite3_prepare_v2(_database, query, -1, out var statement, IntPtr.Zero);
+        Check(result);
+        try
+        {
+            bind?.Invoke(statement);
             var skills = new List<SkillEntry>();
             while (true)
             {
@@ -155,8 +207,6 @@ internal sealed class SkillsDatabase : IDisposable
             throw new InvalidOperationException($"SQLite error: {GetErrorMessage()} (code {result}).");
     }
 
-    private static string Quote(string value) => $"'{value.Replace("'", "''", StringComparison.Ordinal)}'";
-
     public void Dispose()
     {
         if (_database == IntPtr.Zero)
@@ -194,6 +244,12 @@ internal sealed class SkillsDatabase : IDisposable
 
         [DllImport("sqlite3", CallingConvention = CallingConvention.Cdecl, EntryPoint = "sqlite3_step")]
         internal static extern int sqlite3_step(IntPtr statement);
+
+        [DllImport("sqlite3", CallingConvention = CallingConvention.Cdecl, EntryPoint = "sqlite3_reset")]
+        internal static extern int sqlite3_reset(IntPtr statement);
+
+        [DllImport("sqlite3", CallingConvention = CallingConvention.Cdecl, EntryPoint = "sqlite3_clear_bindings")]
+        internal static extern int sqlite3_clear_bindings(IntPtr statement);
 
         [DllImport("sqlite3", CallingConvention = CallingConvention.Cdecl, EntryPoint = "sqlite3_column_text")]
         internal static extern IntPtr sqlite3_column_text(IntPtr statement, int column);

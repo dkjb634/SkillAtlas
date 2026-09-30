@@ -559,6 +559,9 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Runtime Skills Atlas database
+/data/skills.db*
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
