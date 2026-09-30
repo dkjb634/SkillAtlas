@@ -10,7 +10,11 @@ app.UseStaticFiles();
 app.MapGet("/api/skills", async (SkillsCatalog catalog) =>
 {
     var library = await catalog.GetStoredSkillsAsync();
-    return Results.Ok(library);
+    return Results.Ok(new
+    {
+        skills = library.Skills.Select(SkillMarkdownRenderer.Map),
+        library.DatabasePath
+    });
 });
 
 app.MapGet("/api/similar-skills", async (SkillsCatalog catalog) =>
@@ -31,7 +35,7 @@ app.MapPost("/api/skills", async (ScanRequest request, SkillsCatalog catalog) =>
         var library = await catalog.GetStoredSkillsAsync();
         return Results.Ok(new
         {
-            skills = library.Skills,
+            skills = library.Skills.Select(SkillMarkdownRenderer.Map),
             library.DatabasePath,
             searchedRepository = repository
         });
