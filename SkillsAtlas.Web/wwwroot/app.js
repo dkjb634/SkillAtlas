@@ -13,6 +13,7 @@ let skills = [];
 let expandedSkill = null;
 let similarSkillsAreStale = true;
 
+setupLightSpot();
 setupCursorCat();
 
 const libraryTab = document.querySelector("#library-tab");
@@ -273,6 +274,42 @@ function renderSimilarSkills(result) {
     widget.append(header, list);
     similarGroups.append(widget);
   });
+}
+
+function setupLightSpot() {
+  const lightSpot = document.querySelector("#light-spot");
+  if (!lightSpot) return;
+
+  const minimumRadius = 60;
+  const maximumRadius = 420;
+  let radius = 100;
+  let x = window.innerWidth / 2;
+  let y = window.innerHeight / 2;
+
+  const render = () => {
+    lightSpot.style.setProperty("--light-x", `${x}px`);
+    lightSpot.style.setProperty("--light-y", `${y}px`);
+    lightSpot.style.setProperty("--light-radius", `${radius}px`);
+    lightSpot.style.setProperty("--light-fade", `${radius * 1.8}px`);
+    lightSpot.style.setProperty("--light-edge", `${radius * 2.7}px`);
+  };
+
+  const moveLight = (event) => {
+    x = event.clientX;
+    y = event.clientY;
+    render();
+  };
+
+  window.addEventListener("pointermove", moveLight, { passive: true });
+  window.addEventListener("pointerdown", moveLight, { passive: true });
+  window.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 1 : -1;
+    radius = Math.max(minimumRadius, Math.min(maximumRadius, radius + direction * 15));
+    render();
+  }, { passive: false });
+
+  render();
 }
 
 function setupCursorCat() {
