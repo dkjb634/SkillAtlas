@@ -25,19 +25,28 @@ app.MapGet("/api/similar-skills", async (SkillsCatalog catalog) =>
 
 app.MapPost("/api/skills", async (ScanRequest request, SkillsCatalog catalog) =>
 {
-    var repository = request.Repository?.Trim();
-    if (string.IsNullOrWhiteSpace(repository) || !IsRemoteRepositoryUrl(repository))
+    var repositories = (request.Repositories ??
+            (string.IsNullOrWhiteSpace(request.Repository) ? [] : [request.Repository]))
+        .Select(repository => repository?.Trim())
+        .Where(repository => !string.IsNullOrWhiteSpace(repository))
+        .Cast<string>()
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+    if (repositories.Length == 0 || repositories.Any(repository => !IsRemoteRepositoryUrl(repository)))
         return Results.BadRequest(new { message = "Enter an HTTP, HTTPS, SSH, or Git repository URL." });
 
     try
     {
-        await catalog.FetchAsync(repository);
+        foreach (var repository in repositories)
+            await catalog.FetchAsync(repository);
+
         var library = await catalog.GetStoredSkillsAsync();
         return Results.Ok(new
         {
             skills = library.Skills.Select(SkillMarkdownRenderer.Map),
             library.DatabasePath,
-            searchedRepository = repository
+            searchedRepository = repositories.Length == 1 ? repositories[0] : null,
+            searchedRepositories = repositories
         });
     }
     catch (InvalidOperationException exception)
@@ -58,4 +67,4 @@ static bool IsRemoteRepositoryUrl(string value)
            uri.Scheme is "http" or "https" or "ssh" or "git";
 }
 
-internal sealed record ScanRequest(string? Repository);
+internal sealed record ScanRequest(string? Repository, IReadOnlyList<string?>? Repositories);

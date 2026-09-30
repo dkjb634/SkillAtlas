@@ -68,17 +68,33 @@ h1 span { color: #8a75c4; font-weight: 500; }
 
 .search-panel { position: relative; padding: 26px 29px 18px; border: 1px solid rgba(37, 57, 45, .1); border-radius: 22px; background: rgba(255, 255, 253, .83); box-shadow: 0 17px 45px rgba(43, 59, 48, .045); }
 .search-panel-copy { display: grid; grid-template-columns: 1fr; gap: 5px; margin-bottom: 16px; }
+.repository-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.repository-mode { display: flex; gap: 3px; padding: 3px; border: 1px solid #e1e6de; border-radius: 999px; background: #f3f5f1; }
+.mode-button { padding: 7px 12px; border: 0; border-radius: 999px; color: #7b8780; background: transparent; cursor: pointer; font-size: 10px; font-weight: 700; transition: color .18s, background .18s, box-shadow .18s; }
+.mode-button.is-active { color: #f8fff4; background: #344b35; box-shadow: 0 3px 9px rgba(40,64,42,.14); }
 .step-label { display: flex; justify-content: space-between; width: 100%; margin-bottom: 6px; color: #78847d; font-size: 9px; font-weight: 700; letter-spacing: 1.25px; }
 .step-label span { color: #a2ada6; }
 .search-panel-copy label { font: 700 19px var(--font-display); letter-spacing: -.5px; }
 .search-panel-copy p { margin: 0; color: #7c8781; font-size: 12px; }
 .search-panel-copy code { padding: 2px 5px; border-radius: 5px; color: #60558b; background: #f0ecf8; font-size: 11px; }
 .repository-form { display: flex; gap: 10px; }
+.repository-fields { min-width: 0; flex: 1; }
+.repository-entry { display: flex; gap: 8px; }
 .input-wrap { display: flex; min-width: 0; height: 52px; flex: 1; align-items: center; gap: 12px; padding: 0 15px; border: 1px solid #e2e7df; border-radius: 15px; background: #fafbf8; transition: border-color .18s, box-shadow .18s; }
 .input-wrap:focus-within { border-color: #a6c777; box-shadow: 0 0 0 4px rgba(166, 199, 119, .14); }
 .input-wrap svg { width: 18px; height: 18px; flex: none; fill: none; stroke: #829087; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 .input-wrap input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 13px; }
 .input-wrap input::placeholder { color: #a1aaa4; }
+.add-repository { display: flex; height: 52px; flex: none; align-items: center; gap: 6px; padding: 0 16px 0 11px; border: 1px solid #dce5d5; border-radius: 15px; color: #385039; background: #edf5e4; cursor: pointer; font-size: 11px; font-weight: 700; transition: border-color .18s, background .18s, transform .18s; }
+.add-repository:hover { border-color: #b9cdab; background: #e4f1d7; transform: translateY(-1px); }
+.add-repository > span:first-child { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; color: white; background: #526c45; font-size: 19px; font-weight: 400; line-height: 1; }
+.repository-list { display: grid; gap: 7px; margin-top: 9px; padding: 9px; border: 1px solid #e4e8e1; border-radius: 16px; background: rgba(247,249,245,.8); }
+.repository-list:empty::before { padding: 8px; color: #98a19b; text-align: center; content: "Add repository URLs to search together"; font-size: 10px; }
+.repository-item { display: flex; min-width: 0; align-items: center; gap: 10px; padding: 8px 9px 8px 12px; border: 1px solid #e2e8de; border-radius: 12px; background: #fff; box-shadow: 0 3px 9px rgba(40,60,45,.025); }
+.repository-item-index { color: #87947f; font-size: 9px; font-weight: 700; }
+.repository-item-url { overflow: hidden; flex: 1; color: #536159; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.remove-repository { display: grid; width: 25px; height: 25px; flex: none; place-items: center; border: 0; border-radius: 50%; color: #8b7777; background: #f6eeee; cursor: pointer; font-size: 14px; transition: color .18s, background .18s; }
+.remove-repository:hover { color: #793f3f; background: #f0dddd; }
 .scan-button { display: flex; height: 52px; flex: none; align-items: center; gap: 20px; padding: 5px 6px 5px 18px; border: 0; border-radius: 999px; color: #223421; background: var(--green); cursor: pointer; font-size: 12px; font-weight: 700; transition: transform .18s, background .18s, box-shadow .18s; }
 .scan-button:hover { background: #bde958; box-shadow: 0 6px 18px rgba(150, 192, 75, .2); transform: translateY(-1px); }
 .scan-button:disabled { opacity: .72; cursor: wait; transform: none; }
@@ -403,6 +419,7 @@ h2 span { color: #8b77c0; }
   h1 { font-size: clamp(46px, 10vw, 62px); }
   .hero-description { max-width: 390px; font-size: 13px; }
   .search-panel { padding: 22px 19px 16px; }
+  .repository-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
   .search-footer { font-size: 9px; }
   .results { margin-top: 55px; }
   .results-heading { align-items: start; flex-direction: column; }
@@ -424,6 +441,8 @@ h2 span { color: #8b77c0; }
   h1 { font-size: 51px; letter-spacing: -3.4px; }
   .hero-description { max-width: 330px; font-size: 12px; }
   .repository-form { flex-direction: column; }
+  .repository-entry { align-items: stretch; flex-direction: column; }
+  .add-repository { justify-content: center; }
   .scan-button { justify-content: space-between; }
   .search-footer { align-items: start; flex-direction: column; gap: 6px; }
   .results-heading { gap: 15px; }

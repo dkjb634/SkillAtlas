@@ -9,9 +9,15 @@ const welcome = document.querySelector("#welcome");
 const skillList = document.querySelector("#skill-list");
 const filterInput = document.querySelector("#skill-filter");
 const noFilterResults = document.querySelector("#no-filter-results");
+const singleModeButton = document.querySelector("#single-mode");
+const multipleModeButton = document.querySelector("#multiple-mode");
+const addRepositoryButton = document.querySelector("#add-repository");
+const repositoryList = document.querySelector("#repository-list");
 let skills = [];
 let expandedSkill = null;
 let similarSkillsAreStale = true;
+let repositoryMode = "single";
+let repositories = [];
 
 setupLightSpot();
 setupCursorCat();
@@ -30,8 +36,27 @@ similarTab.addEventListener("click", () => switchView("similar"));
 
 const initialLoad = loadSavedSkills();
 
+singleModeButton.addEventListener("click", () => setRepositoryMode("single"));
+multipleModeButton.addEventListener("click", () => setRepositoryMode("multiple"));
+addRepositoryButton.addEventListener("click", addRepository);
+repositoryInput.addEventListener("keydown", (event) => {
+  if (repositoryMode === "multiple" && event.key === "Enter") {
+    event.preventDefault();
+    addRepository();
+  }
+});
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const selectedRepositories = repositoryMode === "multiple"
+    ? repositories
+    : [repositoryInput.value.trim()];
+  if (selectedRepositories.length === 0) {
+    showError("Add at least one repository before searching.");
+    repositoryInput.focus();
+    return;
+  }
+
   setLoading(true);
   errorState.hidden = true;
   results.hidden = true;
@@ -42,13 +67,17 @@ form.addEventListener("submit", async (event) => {
     const response = await fetch("/api/skills", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repository: repositoryInput.value.trim() })
+      body: JSON.stringify(repositoryMode === "multiple"
+        ? { repositories: selectedRepositories }
+        : { repository: selectedRepositories[0] })
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.message || "The repository could not be read.");
-    renderLibrary(payload, payload.searchedRepository
-      ? `Searched ${payload.searchedRepository}`
-      : null, true);
+    const searchedRepositories = payload.searchedRepositories || [];
+    const sourceLabel = searchedRepositories.length > 1
+      ? `Searched ${searchedRepositories.length} repositories`
+      : payload.searchedRepository ? `Searched ${payload.searchedRepository}` : null;
+    renderLibrary(payload, sourceLabel, true);
     similarSkillsAreStale = true;
     if (skills.length > previousCount) {
       document.querySelector(".skill-card:last-child")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -77,9 +106,77 @@ async function loadSavedSkills() {
 
 function setLoading(isLoading) {
   scanButton.disabled = isLoading;
-  buttonLabel.textContent = isLoading ? "Exploring…" : "Explore repository";
+  addRepositoryButton.disabled = isLoading;
+  buttonLabel.textContent = isLoading ? "Searching…" : "Search";
   loadingState.hidden = !isLoading;
   if (isLoading) errorState.hidden = true;
+}
+
+function setRepositoryMode(mode) {
+  repositoryMode = mode;
+  const isMultiple = mode === "multiple";
+  singleModeButton.classList.toggle("is-active", !isMultiple);
+  multipleModeButton.classList.toggle("is-active", isMultiple);
+  singleModeButton.setAttribute("aria-pressed", String(!isMultiple));
+  multipleModeButton.setAttribute("aria-pressed", String(isMultiple));
+  addRepositoryButton.hidden = !isMultiple;
+  repositoryList.hidden = !isMultiple;
+  repositoryInput.required = !isMultiple;
+  repositoryInput.placeholder = isMultiple
+    ? "Paste a repository URL, then press Add"
+    : "https://github.com/JetBrains/kotlin";
+  errorState.hidden = true;
+  repositoryInput.focus();
+}
+
+function addRepository() {
+  const repository = repositoryInput.value.trim();
+  if (!repository) {
+    showError("Enter a repository URL to add.");
+    repositoryInput.focus();
+    return;
+  }
+  if (repositories.some((item) => item.toLocaleLowerCase() === repository.toLocaleLowerCase())) {
+    showError("That repository is already in the list.");
+    return;
+  }
+
+  repositories.push(repository);
+  repositoryInput.value = "";
+  errorState.hidden = true;
+  renderRepositories();
+  repositoryInput.focus();
+}
+
+function renderRepositories() {
+  repositoryList.replaceChildren();
+  repositories.forEach((repository, index) => {
+    const item = document.createElement("div");
+    item.className = "repository-item";
+    const number = document.createElement("span");
+    number.className = "repository-item-index";
+    number.textContent = String(index + 1).padStart(2, "0");
+    const url = document.createElement("span");
+    url.className = "repository-item-url";
+    url.textContent = repository;
+    url.title = repository;
+    const remove = document.createElement("button");
+    remove.className = "remove-repository";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `Remove ${repository}`);
+    remove.addEventListener("click", () => {
+      repositories.splice(index, 1);
+      renderRepositories();
+    });
+    item.append(number, url, remove);
+    repositoryList.append(item);
+  });
+}
+
+function showError(message) {
+  errorState.textContent = message;
+  errorState.hidden = false;
 }
 
 function renderLibrary(library, sourceLabel, shouldScroll = false) {
