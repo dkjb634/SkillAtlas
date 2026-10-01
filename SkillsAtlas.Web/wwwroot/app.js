@@ -328,12 +328,13 @@ function renderSkills() {
 }
 
 function switchView(view) {
+  const showLibrary = view === "library";
   const showSimilar = view === "similar";
   const showOrganization = view === "organization";
-  libraryTab.classList.toggle("is-active", !showSimilar);
+  libraryTab.classList.toggle("is-active", showLibrary);
   similarTab.classList.toggle("is-active", showSimilar);
   organizationTab.classList.toggle("is-active", showOrganization);
-  libraryTab.setAttribute("aria-selected", String(!showSimilar));
+  libraryTab.setAttribute("aria-selected", String(showLibrary));
   similarTab.setAttribute("aria-selected", String(showSimilar));
   organizationTab.setAttribute("aria-selected", String(showOrganization));
   document.querySelectorAll("main > section:not(#similar-view):not(#organization-view)").forEach((section) => {
