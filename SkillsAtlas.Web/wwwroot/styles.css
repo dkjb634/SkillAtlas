@@ -130,6 +130,19 @@ h2 span { color: #8b77c0; }
 .skill-card:hover { border-color: #cad5c1; box-shadow: 0 9px 23px rgba(38,55,44,.055); transform: translateY(-1px); }
 .skill-card.is-expanded { border-color: #abbf91; box-shadow: 0 10px 28px rgba(68, 91, 51, .08); }
 .skill-row { display: flex; align-items: center; gap: 15px; padding: 12px 14px; }
+.starred-widget { margin: 0 0 18px; padding: 16px 18px; border: 1px solid #eadf9c; border-radius: 18px; background: #fffdf0; }
+.starred-heading { display: flex; align-items: center; gap: 10px; }
+.starred-heading h3 { margin: 0; color: #5d572d; font: 700 15px var(--font-display); }
+.starred-heading p { margin: 3px 0 0; color: #938c59; font-size: 10px; }
+.star-symbol { color: #d8aa22; font-size: 20px; }
+.starred-count { margin-left: auto; color: #8b7b32; font-size: 11px; font-weight: 700; }
+.starred-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.starred-empty { margin: 13px 0 0; color: #938c59; font-size: 11px; }
+.starred-item { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #eee3a9; border-radius: 9px; color: #645d31; background: #fff; font-size: 11px; text-decoration: none; }
+.starred-item:hover { border-color: #d2b83e; }
+.starred-item span { color: #a49b68; font-size: 9px; }
+.star-skill { flex: none; height: 34px; padding: 0 10px; border: 0; border-radius: 9px; color: #8f958e; background: #f5f7f2; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; cursor: pointer; }
+.star-skill:hover, .star-skill.is-starred { color: #d4a91e; background: #fff9d9; }
 .skill-main { display: flex; min-width: 0; flex: 1; align-items: center; gap: 14px; padding: 0; border: 0; text-align: left; color: inherit; background: none; cursor: pointer; }
 .skill-number { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border: 1px solid #e4e9e1; border-radius: 50%; color: #737f76; background: #f5f7f2; font: 600 11px var(--font-display); transition: color .2s, background .2s, border-color .2s; }
 .is-expanded .skill-number { border-color: #344b35; color: #f9fff3; background: #344b35; }
