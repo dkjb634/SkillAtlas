@@ -137,6 +137,7 @@ h2 span { color: #8b77c0; }
 .star-symbol { color: #d8aa22; font-size: 20px; }
 .starred-count { margin-left: auto; color: #8b7b32; font-size: 11px; font-weight: 700; }
 .starred-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.starred-empty { margin: 13px 0 0; color: #938c59; font-size: 11px; }
 .starred-item { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #eee3a9; border-radius: 9px; color: #645d31; background: #fff; font-size: 11px; text-decoration: none; }
 .starred-item:hover { border-color: #d2b83e; }
 .starred-item span { color: #a49b68; font-size: 9px; }

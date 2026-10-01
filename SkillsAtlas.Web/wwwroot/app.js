@@ -18,7 +18,7 @@ let expandedSkill = null;
 let similarSkillsAreStale = true;
 let repositoryMode = "single";
 let repositories = [];
-const starredSkillKeys = new Set(JSON.parse(localStorage.getItem("skills-atlas-starred") || "[]"));
+const starredSkillKeys = loadStarredSkillKeys();
 
 setupCursorCat();
 setupFireballs();
@@ -198,8 +198,21 @@ function skillKey(skill) {
   return `${skill.repositoryUrl}|${skill.relativeFilePath}|${skill.commitHash}`;
 }
 
+function loadStarredSkillKeys() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("skills-atlas-starred") || "[]");
+    return new Set(Array.isArray(saved) ? saved : []);
+  } catch {
+    return new Set();
+  }
+}
+
 function saveStarredSkills() {
-  localStorage.setItem("skills-atlas-starred", JSON.stringify([...starredSkillKeys]));
+  try {
+    localStorage.setItem("skills-atlas-starred", JSON.stringify([...starredSkillKeys]));
+  } catch {
+    // The star controls remain usable for the current page when storage is unavailable.
+  }
 }
 
 function renderStarredSkills() {
@@ -207,8 +220,15 @@ function renderStarredSkills() {
   const widget = document.querySelector("#starred-widget");
   const list = document.querySelector("#starred-list");
   document.querySelector("#starred-count").textContent = String(starred.length);
-  widget.hidden = starred.length === 0;
+  widget.hidden = false;
   list.replaceChildren();
+  if (starred.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "starred-empty";
+    empty.textContent = "No starred skills yet. Select the ☆ beside a skill to save it here.";
+    list.append(empty);
+    return;
+  }
   starred.forEach((skill) => {
     const link = document.createElement("a");
     link.className = "starred-item";
