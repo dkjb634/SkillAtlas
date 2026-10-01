@@ -3,7 +3,7 @@
 - Date (UTC): 2026-10-01T08:41:11Z
 - Branch: `fix/support-starring-skills`
 - Target: `main`
-- PR: Pending
+- PR: https://github.com/dkjb634/SkillAtlas/pull/8
 
 ## Summary
 Implemented issue #7 by adding browser-persistent starring for skills and a starred-skills widget.
