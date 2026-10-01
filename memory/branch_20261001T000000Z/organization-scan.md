@@ -3,7 +3,7 @@
 - Date (UTC): 2026-10-01
 - Branch: `feature/organization-scan`
 - Target: `main`
-- PR: pending
+- PR: https://github.com/dkjb634/SkillAtlas/pull/10
 
 ## Summary
 Implemented issue #9 by adding an Organisation Scan view and a GitHub organization repository discovery endpoint. The scan enumerates accessible repositories, skips archived repositories, scans each repository, and refreshes the saved skill library.
