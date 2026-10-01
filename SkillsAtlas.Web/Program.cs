@@ -2,6 +2,7 @@ using SkillsAtlas;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(new SkillsCatalog());
+builder.Services.AddHttpClient<OrganizationRepositoryResolver>();
 
 var app = builder.Build();
 app.UseDefaultFiles();
@@ -55,6 +56,34 @@ app.MapPost("/api/skills", async (ScanRequest request, SkillsCatalog catalog) =>
     }
 });
 
+app.MapPost("/api/organizations/scan", async (OrganizationScanRequest request, SkillsCatalog catalog,
+    OrganizationRepositoryResolver resolver, CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(request.OrganizationUrl))
+        return Results.BadRequest(new { message = "Enter an organization URL." });
+
+    try
+    {
+        var repositories = await resolver.ResolveAsync(request.OrganizationUrl, cancellationToken);
+        foreach (var repository in repositories)
+            await catalog.FetchAsync(repository);
+
+        var library = await catalog.GetStoredSkillsAsync();
+        return Results.Ok(new
+        {
+            skills = library.Skills.Select(SkillMarkdownRenderer.Map),
+            library.DatabasePath,
+            organizationUrl = request.OrganizationUrl.Trim(),
+            searchedRepositories = repositories,
+            repositoryCount = repositories.Count
+        });
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.UnprocessableEntity(new { message = exception.Message });
+    }
+});
+
 app.MapFallbackToFile("index.html");
 app.Run();
 
@@ -68,3 +97,4 @@ static bool IsRemoteRepositoryUrl(string value)
 }
 
 internal sealed record ScanRequest(string? Repository, IReadOnlyList<string?>? Repositories);
+internal sealed record OrganizationScanRequest(string? OrganizationUrl);

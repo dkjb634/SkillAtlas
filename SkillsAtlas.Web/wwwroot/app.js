@@ -24,7 +24,9 @@ setupFireballs();
 
 const libraryTab = document.querySelector("#library-tab");
 const similarTab = document.querySelector("#similar-tab");
+const organizationTab = document.querySelector("#organization-tab");
 const similarView = document.querySelector("#similar-view");
+const organizationView = document.querySelector("#organization-view");
 const similarGroups = document.querySelector("#similar-groups");
 const similarLoading = document.querySelector("#similar-loading");
 const similarError = document.querySelector("#similar-error");
@@ -32,6 +34,14 @@ const noSimilarResults = document.querySelector("#no-similar-results");
 
 libraryTab.addEventListener("click", () => switchView("library"));
 similarTab.addEventListener("click", () => switchView("similar"));
+organizationTab.addEventListener("click", () => switchView("organization"));
+
+const organizationForm = document.querySelector("#organization-form");
+const organizationInput = document.querySelector("#organization-input");
+const organizationScanButton = document.querySelector("#organization-scan-button");
+const organizationLoading = document.querySelector("#organization-loading");
+const organizationError = document.querySelector("#organization-error");
+organizationForm.addEventListener("submit", scanOrganization);
 
 const initialLoad = loadSavedSkills();
 
@@ -100,6 +110,30 @@ async function loadSavedSkills() {
   } catch (error) {
     errorState.textContent = error.message || "The saved skill library could not be loaded.";
     errorState.hidden = false;
+  }
+}
+
+async function scanOrganization(event) {
+  event.preventDefault();
+  organizationScanButton.disabled = true;
+  organizationLoading.hidden = false;
+  organizationError.hidden = true;
+  try {
+    const response = await fetch("/api/organizations/scan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizationUrl: organizationInput.value.trim() })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message || "The organization could not be scanned.");
+    renderLibrary(payload, `Scanned ${payload.repositoryCount} repositories`, true);
+    similarSkillsAreStale = true;
+    switchView("library");
+  } catch (error) {
+    organizationError.textContent = error.message || "The organization could not be scanned.";
+    organizationError.hidden = false;
+  } finally {
+    organizationScanButton.disabled = false;
+    organizationLoading.hidden = true;
   }
 }
 
@@ -295,14 +329,18 @@ function renderSkills() {
 
 function switchView(view) {
   const showSimilar = view === "similar";
+  const showOrganization = view === "organization";
   libraryTab.classList.toggle("is-active", !showSimilar);
   similarTab.classList.toggle("is-active", showSimilar);
+  organizationTab.classList.toggle("is-active", showOrganization);
   libraryTab.setAttribute("aria-selected", String(!showSimilar));
   similarTab.setAttribute("aria-selected", String(showSimilar));
-  document.querySelectorAll("main > section:not(#similar-view)").forEach((section) => {
-    section.classList.toggle("view-hidden", showSimilar);
+  organizationTab.setAttribute("aria-selected", String(showOrganization));
+  document.querySelectorAll("main > section:not(#similar-view):not(#organization-view)").forEach((section) => {
+    section.classList.toggle("view-hidden", showSimilar || showOrganization);
   });
   similarView.hidden = !showSimilar;
+  organizationView.hidden = !showOrganization;
   if (showSimilar && similarSkillsAreStale) loadSimilarSkills();
 }
 
