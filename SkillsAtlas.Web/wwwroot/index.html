@@ -76,6 +76,10 @@
 
       <section id="status-region" class="status-region" aria-live="polite">
         <div id="loading-state" class="loading-state" hidden><span class="loader"></span><span>Reading the repository and finding its skills…</span></div>
+        <div id="organization-loading" class="loading-state organization-progress" hidden role="status">
+          <div class="organization-progress-copy"><span id="organization-progress-label">Reading organization repositories…</span><span id="organization-progress-count">0 repositories</span></div>
+          <progress id="organization-progress-bar" max="1" value="0" aria-label="Repositories scanned"></progress>
+        </div>
         <div id="error-state" class="error-state" hidden></div>
       </section>
 
@@ -137,8 +141,6 @@
           <div class="input-wrap"><input id="organization-input" type="url" placeholder="https://github.com/dotnet" autocomplete="url" required></div>
           <button id="organization-scan-button" class="scan-button" type="submit"><span class="button-label">Scan</span><span class="button-icon" aria-hidden="true">↗</span></button>
         </form>
-        <div id="organization-loading" class="loading-state" hidden><span class="loader"></span><span>Reading repositories and finding their skills…</span></div>
-        <div id="organization-error" class="error-state" hidden></div>
       </section>
     </main>
 

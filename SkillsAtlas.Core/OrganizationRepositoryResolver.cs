@@ -25,7 +25,14 @@ public sealed class OrganizationRepositoryResolver
             var url = $"https://api.github.com/orgs/{Uri.EscapeDataString(organization)}/repos?type=all&per_page=100&page={page}";
             using var response = await _httpClient.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden &&
+                    response.Headers.TryGetValues("X-RateLimit-Remaining", out var remainingValues) &&
+                    remainingValues.FirstOrDefault() == "0")
+                    throw new InvalidOperationException($"GitHub's API rate limit was reached while reading organization '{organization}'. Set GITHUB_TOKEN for the SkillsAtlas server and restart it.");
+
                 throw new InvalidOperationException($"GitHub could not read organization '{organization}' ({(int)response.StatusCode}).");
+            }
 
             var pageRepositories = await response.Content.ReadFromJsonAsync<IReadOnlyList<GitHubRepository>>(cancellationToken: cancellationToken) ?? [];
             repositories.AddRange(pageRepositories

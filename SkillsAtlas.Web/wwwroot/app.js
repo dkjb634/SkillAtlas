@@ -14,6 +14,7 @@ const multipleModeButton = document.querySelector("#multiple-mode");
 const addRepositoryButton = document.querySelector("#add-repository");
 const repositoryList = document.querySelector("#repository-list");
 let skills = [];
+let databasePath = "";
 let expandedSkill = null;
 let similarSkillsAreStale = true;
 let repositoryMode = "single";
@@ -40,7 +41,9 @@ const organizationForm = document.querySelector("#organization-form");
 const organizationInput = document.querySelector("#organization-input");
 const organizationScanButton = document.querySelector("#organization-scan-button");
 const organizationLoading = document.querySelector("#organization-loading");
-const organizationError = document.querySelector("#organization-error");
+const organizationProgressLabel = document.querySelector("#organization-progress-label");
+const organizationProgressCount = document.querySelector("#organization-progress-count");
+const organizationProgressBar = document.querySelector("#organization-progress-bar");
 organizationForm.addEventListener("submit", scanOrganization);
 
 const initialLoad = loadSavedSkills();
@@ -117,24 +120,120 @@ async function scanOrganization(event) {
   event.preventDefault();
   organizationScanButton.disabled = true;
   organizationLoading.hidden = false;
-  organizationError.hidden = true;
+  organizationProgressLabel.textContent = "Reading organization repositories…";
+  organizationProgressCount.textContent = "0 repositories scanned";
+  organizationProgressBar.max = 1;
+  organizationProgressBar.value = 0;
+  errorState.hidden = true;
+  switchView("library");
+
+  let streamStarted = false;
+  let scanCompleted = false;
+  const repositoryErrors = [];
   try {
+    await initialLoad;
     const response = await fetch("/api/organizations/scan", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ organizationUrl: organizationInput.value.trim() })
     });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.message || "The organization could not be scanned.");
-    renderLibrary(payload, `Scanned ${payload.repositoryCount} repositories`, true);
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.message || "The organization could not be scanned.");
+    }
+
+    await readOrganizationEvents(response, (message) => {
+      if (message.type === "start") {
+        streamStarted = true;
+        const total = message.totalRepositories;
+        organizationProgressBar.max = Math.max(total, 1);
+        organizationProgressBar.value = 0;
+        organizationProgressLabel.textContent = `Scanning ${message.organizationUrl}`;
+        organizationProgressCount.textContent = `0 / ${total} repositories scanned`;
+        renderLibrary({ skills, databasePath }, `Scanning ${message.organizationUrl} · 0 / ${total} repositories`, false, true);
+        return;
+      }
+
+      if (message.type === "repository") {
+        similarSkillsAreStale = true;
+        mergeSkills(message.skills || []);
+        organizationProgressBar.value = message.completedRepositories;
+        organizationProgressLabel.textContent = message.error
+          ? `Could not scan ${message.repository}`
+          : `Scanned ${message.repository}`;
+        organizationProgressCount.textContent = `${message.completedRepositories} / ${message.totalRepositories} repositories scanned`;
+        if (message.error) repositoryErrors.push(`${message.repository}: ${message.error}`);
+        renderLibrary(
+          { skills, databasePath },
+          `Scanning organization · ${message.completedRepositories} / ${message.totalRepositories} repositories`,
+          false,
+          true
+        );
+        return;
+      }
+
+      if (message.type === "complete") {
+        scanCompleted = true;
+        organizationProgressBar.value = Math.max(message.totalRepositories, 1);
+        organizationProgressLabel.textContent = "Organization scan complete";
+        organizationProgressCount.textContent = `${message.completedRepositories} / ${message.totalRepositories} repositories scanned · ${message.discoveredSkills} skills · ${message.failedRepositories} failed`;
+        const summary = `Scanned ${message.completedRepositories} repositories` +
+          (message.failedRepositories ? ` · ${message.failedRepositories} could not be scanned` : "");
+        renderLibrary({ skills, databasePath }, summary, false, true);
+      }
+    });
+
+    if (!scanCompleted) throw new Error("The organization scan ended before all repositories were processed.");
     similarSkillsAreStale = true;
-    switchView("library");
+    if (repositoryErrors.length) {
+      const shownErrors = repositoryErrors.slice(0, 3).join("\n");
+      const remainingErrors = repositoryErrors.length - Math.min(repositoryErrors.length, 3);
+      errorState.textContent = `${repositoryErrors.length} repositories could not be scanned. ${shownErrors}` +
+        (remainingErrors ? `\n…and ${remainingErrors} more.` : "");
+      errorState.hidden = false;
+    }
   } catch (error) {
-    organizationError.textContent = error.message || "The organization could not be scanned.";
-    organizationError.hidden = false;
+    errorState.textContent = error.message || "The organization could not be scanned.";
+    errorState.hidden = false;
+    if (streamStarted && !scanCompleted)
+      organizationProgressLabel.textContent = "The organization scan stopped before completion";
   } finally {
     organizationScanButton.disabled = false;
-    organizationLoading.hidden = true;
+    if (!streamStarted) organizationLoading.hidden = true;
   }
+}
+
+async function readOrganizationEvents(response, onEvent) {
+  if (!response.body) throw new Error("This browser could not read the organization scan stream.");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      pending += decoder.decode(value || new Uint8Array(), { stream: !done });
+      let newlineIndex;
+      while ((newlineIndex = pending.indexOf("\n")) >= 0) {
+        const line = pending.slice(0, newlineIndex).trim();
+        pending = pending.slice(newlineIndex + 1);
+        if (line) onEvent(JSON.parse(line));
+      }
+      if (done) break;
+    }
+    if (pending.trim()) onEvent(JSON.parse(pending));
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+function mergeSkills(discoveredSkills) {
+  const merged = new Map(skills.map((skill) => [
+    JSON.stringify([skill.repositoryUrl, skill.commitHash, skill.name]),
+    skill
+  ]));
+  discoveredSkills.forEach((skill) => {
+    merged.set(JSON.stringify([skill.repositoryUrl, skill.commitHash, skill.name]), skill);
+  });
+  skills = [...merged.values()];
 }
 
 function setLoading(isLoading) {
@@ -212,14 +311,15 @@ function showError(message) {
   errorState.hidden = false;
 }
 
-function renderLibrary(library, sourceLabel, shouldScroll = false) {
+function renderLibrary(library, sourceLabel, shouldScroll = false, preserveExpanded = false) {
   skills = library.skills || [];
-  expandedSkill = null;
+  databasePath = library.databasePath || databasePath;
+  if (!preserveExpanded) expandedSkill = null;
   const repositoryCount = new Set(skills.map((skill) => skill.repositoryUrl)).size;
   document.querySelector("#repository-meta").textContent = sourceLabel
     ? `${sourceLabel} · ${skills.length} saved ${skills.length === 1 ? "skill" : "skills"} across ${repositoryCount} ${repositoryCount === 1 ? "repository" : "repositories"}`
     : `${skills.length} saved ${skills.length === 1 ? "skill" : "skills"} across ${repositoryCount} ${repositoryCount === 1 ? "repository" : "repositories"}`;
-  document.querySelector("#database-location").textContent = `SQLite database: ${library.databasePath}`;
+  document.querySelector("#database-location").textContent = databasePath ? `SQLite database: ${databasePath}` : "";
   document.querySelector("#skill-count").textContent = `${skills.length} ${skills.length === 1 ? "skill" : "skills"}`;
   welcome.hidden = true;
   results.hidden = false;

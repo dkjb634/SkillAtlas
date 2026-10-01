@@ -107,9 +107,16 @@ h1 span { color: #8a75c4; font-weight: 500; }
 .status-region { min-height: 0; }
 .loading-state, .error-state { margin-top: 19px; padding: 15px 18px; border-radius: 14px; font-size: 12px; }
 .loading-state { display: flex; align-items: center; gap: 11px; color: #606e66; background: #ecf0e8; }
+.organization-progress { display: grid; gap: 10px; }
+.organization-progress-copy { display: flex; justify-content: space-between; gap: 12px; color: #606e66; }
+#organization-progress-count { flex: none; font-weight: 700; }
+#organization-progress-bar { width: 100%; height: 8px; overflow: hidden; appearance: none; border: 0; border-radius: 999px; background: #dce5d5; }
+#organization-progress-bar::-webkit-progress-bar { border-radius: 999px; background: #dce5d5; }
+#organization-progress-bar::-webkit-progress-value { border-radius: 999px; background: #7d9a59; transition: width .25s ease; }
+#organization-progress-bar::-moz-progress-bar { border-radius: 999px; background: #7d9a59; }
 .loader { width: 17px; height: 17px; border: 2px solid #cad6c1; border-top-color: #678346; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error-state { color: #8d4545; background: #f6e9e7; line-height: 1.5; }
+.error-state { color: #8d4545; background: #f6e9e7; line-height: 1.5; white-space: pre-line; }
 
 .results { margin-top: 70px; animation: appear .45s ease both; }
 @keyframes appear { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
