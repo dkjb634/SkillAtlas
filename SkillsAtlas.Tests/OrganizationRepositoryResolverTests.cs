@@ -46,6 +46,27 @@ public sealed class OrganizationRepositoryResolverTests
 
         Assert.Equal(["https://github.com/acme/one.git", "https://github.com/acme/two.git"], repositories);
         Assert.Equal(2, handler.Requests.Count);
+        Assert.All(handler.Requests, request => Assert.Contains("type=public", request.RequestUri!.Query));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ExplainsGitHubRateLimit()
+    {
+        var handler = new StubHandler(_ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.Forbidden)
+            {
+                Content = new StringContent("{\"message\":\"rate limit exceeded\"}")
+            };
+            response.Headers.Add("X-RateLimit-Remaining", "0");
+            return response;
+        });
+        var resolver = new OrganizationRepositoryResolver(new HttpClient(handler));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            resolver.ResolveAsync("https://github.com/acme"));
+
+        Assert.Contains("GITHUB_TOKEN", exception.Message);
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler

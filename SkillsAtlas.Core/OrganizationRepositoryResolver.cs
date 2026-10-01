@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 
 namespace SkillsAtlas;
@@ -12,6 +13,10 @@ public sealed class OrganizationRepositoryResolver
         _httpClient = httpClient ?? new HttpClient();
         if (!_httpClient.DefaultRequestHeaders.UserAgent.Any())
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("SkillsAtlas/1.0");
+
+        var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+        if (!string.IsNullOrWhiteSpace(token) && _httpClient.DefaultRequestHeaders.Authorization is null)
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     public async Task<IReadOnlyList<string>> ResolveAsync(string organizationUrl, CancellationToken cancellationToken = default)
@@ -22,10 +27,16 @@ public sealed class OrganizationRepositoryResolver
         var repositories = new List<string>();
         for (var page = 1; ; page++)
         {
-            var url = $"https://api.github.com/orgs/{Uri.EscapeDataString(organization)}/repos?type=all&per_page=100&page={page}";
+            var url = $"https://api.github.com/orgs/{Uri.EscapeDataString(organization)}/repos?type=public&per_page=100&page={page}";
             using var response = await _httpClient.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode)
+            {
+                if ((int)response.StatusCode == 403 && response.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining) &&
+                    remaining.FirstOrDefault() == "0")
+                    throw new InvalidOperationException("GitHub's unauthenticated API rate limit has been reached. Set the GITHUB_TOKEN environment variable and restart the app, then try again.");
+
                 throw new InvalidOperationException($"GitHub could not read organization '{organization}' ({(int)response.StatusCode}).");
+            }
 
             var pageRepositories = await response.Content.ReadFromJsonAsync<IReadOnlyList<GitHubRepository>>(cancellationToken: cancellationToken) ?? [];
             repositories.AddRange(pageRepositories
