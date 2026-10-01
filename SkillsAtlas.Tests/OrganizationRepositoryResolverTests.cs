@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using SkillsAtlas;
 using Xunit;
 
@@ -29,9 +30,13 @@ public sealed class OrganizationRepositoryResolverTests
     {
         var handler = new StubHandler(request =>
         {
-            var json = request.RequestUri!.Query.Contains("page=1")
-                ? "[{\"clone_url\":\"https://github.com/acme/one.git\",\"archived\":false}]"
-                : "[]";
+            var page = request.RequestUri!.Query.Contains("page=1") ?
+                Enumerable.Range(0, 99)
+                    .Select(_ => new { clone_url = "https://github.com/acme/archived.git", archived = true })
+                    .Append(new { clone_url = "https://github.com/acme/one.git", archived = false })
+                    .ToArray() :
+                [new { clone_url = "https://github.com/acme/two.git", archived = false }];
+            var json = JsonSerializer.Serialize(page);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
         });
         using var client = new HttpClient(handler);
@@ -39,7 +44,7 @@ public sealed class OrganizationRepositoryResolverTests
 
         var repositories = await resolver.ResolveAsync("https://github.com/acme");
 
-        Assert.Equal(["https://github.com/acme/one.git"], repositories);
+        Assert.Equal(["https://github.com/acme/one.git", "https://github.com/acme/two.git"], repositories);
         Assert.Equal(2, handler.Requests.Count);
     }
 
