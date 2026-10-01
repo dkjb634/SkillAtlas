@@ -18,6 +18,7 @@ let expandedSkill = null;
 let similarSkillsAreStale = true;
 let repositoryMode = "single";
 let repositories = [];
+const starredSkillKeys = new Set(JSON.parse(localStorage.getItem("skills-atlas-starred") || "[]"));
 
 setupCursorCat();
 setupFireballs();
@@ -193,6 +194,35 @@ function renderLibrary(library, sourceLabel, shouldScroll = false) {
   if (shouldScroll) results.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function skillKey(skill) {
+  return `${skill.repositoryUrl}|${skill.relativeFilePath}|${skill.commitHash}`;
+}
+
+function saveStarredSkills() {
+  localStorage.setItem("skills-atlas-starred", JSON.stringify([...starredSkillKeys]));
+}
+
+function renderStarredSkills() {
+  const starred = skills.filter((skill) => starredSkillKeys.has(skillKey(skill)));
+  const widget = document.querySelector("#starred-widget");
+  const list = document.querySelector("#starred-list");
+  document.querySelector("#starred-count").textContent = String(starred.length);
+  widget.hidden = starred.length === 0;
+  list.replaceChildren();
+  starred.forEach((skill) => {
+    const link = document.createElement("a");
+    link.className = "starred-item";
+    link.href = skill.fileUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = skill.name;
+    const repository = document.createElement("span");
+    repository.textContent = skill.repositoryName;
+    link.append(repository);
+    list.append(link);
+  });
+}
+
 function renderSkills() {
   const filter = filterInput.value.trim().toLocaleLowerCase();
   const visibleSkills = skills.filter((skill) =>
@@ -200,6 +230,7 @@ function renderSkills() {
   );
 
   skillList.replaceChildren();
+  renderStarredSkills();
   noFilterResults.textContent = skills.length === 0
     ? "No saved skills yet. Explore a repository to add some."
     : `No skill names match “${filterInput.value.trim()}”.`;
@@ -268,6 +299,24 @@ function renderSkills() {
     external.textContent = "↗";
     fileLink.append(fileIcon, fileName, external);
     row.append(toggle, fileLink);
+
+    const star = document.createElement("button");
+    star.className = "star-skill";
+    star.type = "button";
+    const starred = starredSkillKeys.has(skillKey(skill));
+    star.classList.toggle("is-starred", starred);
+    star.setAttribute("aria-pressed", String(starred));
+    star.setAttribute("aria-label", `${starred ? "Unstar" : "Star"} ${skill.name}`);
+    star.title = starred ? "Unstar skill" : "Star skill";
+    star.textContent = starred ? "★" : "☆";
+    star.addEventListener("click", () => {
+      const key = skillKey(skill);
+      if (starredSkillKeys.has(key)) starredSkillKeys.delete(key);
+      else starredSkillKeys.add(key);
+      saveStarredSkills();
+      renderSkills();
+    });
+    row.append(star);
 
     const detailGrid = document.createElement("div");
     detailGrid.className = "detail-grid";
