@@ -42,7 +42,10 @@ internal sealed record RepositoryCheckout(
         try
         {
             if (cloneSource is not null)
-                await RunGitAsync(temporaryDirectory!, "clone", "--depth", "1", "--no-tags", "--", cloneSource, rootPath);
+            {
+                await RunGitAsync(temporaryDirectory!, "clone", "--depth", "1", "--no-tags", "--filter=blob:none", "--sparse", "--", cloneSource, rootPath);
+                await LimitCheckoutToHiddenDirectoriesAsync(rootPath);
+            }
 
             var commitHash = (await RunGitAsync(rootPath, "rev-parse", "HEAD")).Trim();
             if (commitHash.Length == 0)
@@ -124,6 +127,21 @@ internal sealed record RepositoryCheckout(
         }
     }
 
+    private static async Task LimitCheckoutToHiddenDirectoriesAsync(string rootPath)
+    {
+        var rootDirectories = (await RunGitAsync(rootPath, "ls-tree", "-z", "--name-only", "-d", "HEAD"))
+            .Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .Where(name => name.StartsWith(".", StringComparison.Ordinal))
+            .ToArray();
+
+        if (rootDirectories.Length > 0)
+        {
+            var arguments = new List<string> { "sparse-checkout", "set", "--cone", "--" };
+            arguments.AddRange(rootDirectories);
+            await RunGitAsync(rootPath, arguments.ToArray());
+        }
+    }
+
     private static async Task<string> RunGitAsync(string workingDirectory, params string[] arguments)
     {
         var startInfo = new System.Diagnostics.ProcessStartInfo("git")
@@ -160,7 +178,13 @@ internal static class SkillScanner
     {
         var result = new List<SkillEntry>();
         var pending = new Stack<string>();
-        pending.Push(checkout.RootPath);
+        foreach (var directory in Directory.EnumerateDirectories(checkout.RootPath))
+        {
+            if (Path.GetFileName(directory).StartsWith(".", StringComparison.Ordinal) &&
+                !IgnoredDirectories.Contains(Path.GetFileName(directory)) &&
+                (File.GetAttributes(directory) & FileAttributes.ReparsePoint) == 0)
+                pending.Push(directory);
+        }
 
         while (pending.Count > 0)
         {
@@ -173,13 +197,17 @@ internal static class SkillScanner
             }
 
             foreach (var filePath in Directory.EnumerateFiles(directory)
-                         .Where(path => string.Equals(Path.GetFileName(path), "SKILL.md", StringComparison.OrdinalIgnoreCase) &&
+                         .Where(path => string.Equals(Path.GetExtension(path), ".md", StringComparison.OrdinalIgnoreCase) &&
                                         (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0))
             {
                 var relativePath = Path.GetRelativePath(checkout.RootPath, filePath)
                     .Replace(Path.DirectorySeparatorChar, '/');
                 var content = File.ReadAllText(filePath);
-                var (name, description, detail) = ParseSkill(content, Path.GetDirectoryName(filePath));
+                var fileName = Path.GetFileName(filePath);
+                var fallbackName = fileName.Equals("SKILL.md", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetFileName(Path.GetDirectoryName(filePath))
+                    : Path.GetFileNameWithoutExtension(fileName);
+                var (name, description, detail) = ParseSkill(content, fallbackName);
                 result.Add(new SkillEntry(
                     checkout.RepositoryName,
                     checkout.RepositoryUrl,
@@ -195,10 +223,10 @@ internal static class SkillScanner
         return result.OrderBy(skill => skill.Name, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
-    private static (string Name, string Description, string Detail) ParseSkill(string content, string? parentDirectory)
+    internal static (string Name, string Description, string Detail) ParseSkill(string content, string? fallbackName)
     {
         var lines = content.Replace("\r\n", "\n").Split('\n');
-        var name = parentDirectory is null ? "Unnamed skill" : Path.GetFileName(parentDirectory);
+        var name = fallbackName ?? "Unnamed skill";
         var description = string.Empty;
         var detailStart = 0;
 
@@ -244,7 +272,7 @@ internal static class SkillScanner
         }
 
         if (string.IsNullOrWhiteSpace(name))
-            name = parentDirectory is null ? "Unnamed skill" : Path.GetFileName(parentDirectory);
+            name = fallbackName ?? "Unnamed skill";
         return (name, description, detail);
     }
 
