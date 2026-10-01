@@ -21,6 +21,7 @@
       <nav class="view-tabs" aria-label="Main views">
         <button id="library-tab" class="view-tab is-active" type="button" aria-selected="true">Skill library</button>
         <button id="similar-tab" class="view-tab" type="button" aria-selected="false">Similar skills</button>
+        <button id="organization-tab" class="view-tab" type="button" aria-selected="false">Organisation Scan</button>
       </nav>
       <div class="topbar-note"><span class="live-dot"></span> A field guide to AI skills</div>
     </header>
@@ -75,6 +76,10 @@
 
       <section id="status-region" class="status-region" aria-live="polite">
         <div id="loading-state" class="loading-state" hidden><span class="loader"></span><span>Reading the repository and finding its skills…</span></div>
+        <div id="organization-loading" class="loading-state organization-progress" hidden role="status">
+          <div class="organization-progress-copy"><span id="organization-progress-label">Reading organization repositories…</span><span id="organization-progress-count">0 repositories</span></div>
+          <progress id="organization-progress-bar" max="1" value="0" aria-label="Repositories scanned"></progress>
+        </div>
         <div id="error-state" class="error-state" hidden></div>
       </section>
 
@@ -126,6 +131,20 @@
           <h2>No close matches yet</h2>
           <p>Add more skills to your library, or skills with more detailed descriptions, and check again.</p>
         </div>
+      </section>
+
+      <section id="organization-view" class="similar-view" hidden aria-labelledby="organization-title">
+        <div class="similar-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> SCAN AN ORGANIZATION</div>
+            <h1 id="organization-title">Find skills across<br><span>every repository.</span></h1>
+            <p>Enter a GitHub organization URL to scan all accessible repositories and add their skills to your library.</p>
+          </div>
+        </div>
+        <form id="organization-form" class="repository-form organization-form">
+          <div class="input-wrap"><input id="organization-input" type="url" placeholder="https://github.com/dotnet" autocomplete="url" required></div>
+          <button id="organization-scan-button" class="scan-button" type="submit"><span class="button-label">Scan</span><span class="button-icon" aria-hidden="true">↗</span></button>
+        </form>
       </section>
     </main>
 

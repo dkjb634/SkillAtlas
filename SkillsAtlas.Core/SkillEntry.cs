@@ -15,6 +15,7 @@ internal sealed record RepositoryCheckout(
     string RepositoryName,
     string RepositoryUrl,
     string CommitHash,
+    bool HasCommit,
     string? TemporaryDirectory) : IDisposable
 {
     public static async Task<RepositoryCheckout> OpenAsync(string source)
@@ -44,15 +45,20 @@ internal sealed record RepositoryCheckout(
             if (cloneSource is not null)
             {
                 await RunGitAsync(temporaryDirectory!, "clone", "--depth", "1", "--no-tags", "--filter=blob:none", "--sparse", "--", cloneSource, rootPath);
-                await LimitCheckoutToHiddenDirectoriesAsync(rootPath);
             }
 
-            var commitHash = (await RunGitAsync(rootPath, "rev-parse", "HEAD")).Trim();
-            if (commitHash.Length == 0)
+            var commitHash = cloneSource is null
+                ? (await RunGitAsync(rootPath, "rev-parse", "HEAD")).Trim()
+                : (await TryRunGitAsync(rootPath, "rev-parse", "--verify", "HEAD"))?.Trim() ?? string.Empty;
+            var hasCommit = commitHash.Length > 0;
+            if (cloneSource is not null && hasCommit)
+                await LimitCheckoutToHiddenDirectoriesAsync(rootPath);
+
+            if (cloneSource is null && !hasCommit)
                 throw new InvalidOperationException("Git did not return a commit hash for the repository.");
 
             var repositoryName = GetRepositoryName(remoteUrl, rootPath);
-            return new RepositoryCheckout(rootPath, repositoryName, NormalizeRepositoryUrl(remoteUrl), commitHash, temporaryDirectory);
+            return new RepositoryCheckout(rootPath, repositoryName, NormalizeRepositoryUrl(remoteUrl), commitHash, hasCommit, temporaryDirectory);
         }
         catch
         {
@@ -144,6 +150,20 @@ internal sealed record RepositoryCheckout(
 
     private static async Task<string> RunGitAsync(string workingDirectory, params string[] arguments)
     {
+        var result = await ExecuteGitAsync(workingDirectory, arguments);
+        if (result.ExitCode != 0)
+            throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed: {result.Error.Trim()}");
+        return result.Output;
+    }
+
+    private static async Task<string?> TryRunGitAsync(string workingDirectory, params string[] arguments)
+    {
+        var result = await ExecuteGitAsync(workingDirectory, arguments);
+        return result.ExitCode == 0 ? result.Output : null;
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> ExecuteGitAsync(string workingDirectory, string[] arguments)
+    {
         var startInfo = new System.Diagnostics.ProcessStartInfo("git")
         {
             WorkingDirectory = workingDirectory,
@@ -159,11 +179,7 @@ internal sealed record RepositoryCheckout(
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
-        var output = await outputTask;
-        var error = await errorTask;
-        if (process.ExitCode != 0)
-            throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed: {error.Trim()}");
-        return output;
+        return (process.ExitCode, await outputTask, await errorTask);
     }
 }
 
@@ -176,6 +192,9 @@ internal static class SkillScanner
 
     public static List<SkillEntry> Scan(RepositoryCheckout checkout)
     {
+        if (!checkout.HasCommit)
+            return [];
+
         var result = new List<SkillEntry>();
         var pending = new Stack<string>();
         foreach (var directory in Directory.EnumerateDirectories(checkout.RootPath))
