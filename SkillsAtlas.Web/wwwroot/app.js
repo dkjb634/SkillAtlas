@@ -328,7 +328,7 @@ function renderSkills() {
     star.setAttribute("aria-pressed", String(starred));
     star.setAttribute("aria-label", `${starred ? "Unstar" : "Star"} ${skill.name}`);
     star.title = starred ? "Unstar skill" : "Star skill";
-    star.textContent = starred ? "★" : "☆";
+    star.textContent = starred ? "★ Starred" : "☆ Star";
     star.addEventListener("click", () => {
       const key = skillKey(skill);
       if (starredSkillKeys.has(key)) starredSkillKeys.delete(key);

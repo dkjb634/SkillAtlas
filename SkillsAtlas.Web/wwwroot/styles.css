@@ -141,7 +141,7 @@ h2 span { color: #8b77c0; }
 .starred-item { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #eee3a9; border-radius: 9px; color: #645d31; background: #fff; font-size: 11px; text-decoration: none; }
 .starred-item:hover { border-color: #d2b83e; }
 .starred-item span { color: #a49b68; font-size: 9px; }
-.star-skill { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 9px; color: #b1b5ad; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; }
+.star-skill { flex: none; height: 34px; padding: 0 10px; border: 0; border-radius: 9px; color: #8f958e; background: #f5f7f2; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; cursor: pointer; }
 .star-skill:hover, .star-skill.is-starred { color: #d4a91e; background: #fff9d9; }
 .skill-main { display: flex; min-width: 0; flex: 1; align-items: center; gap: 14px; padding: 0; border: 0; text-align: left; color: inherit; background: none; cursor: pointer; }
 .skill-number { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border: 1px solid #e4e9e1; border-radius: 50%; color: #737f76; background: #f5f7f2; font: 600 11px var(--font-display); transition: color .2s, background .2s, border-color .2s; }

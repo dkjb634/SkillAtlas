@@ -16,6 +16,7 @@ public sealed class FrontendStarredSkillsTests
         Assert.Contains("No starred skills yet", app);
         Assert.Contains("skillKey(skill)", app);
         Assert.Contains("star-skill", app);
+        Assert.Contains("☆ Star", app);
         Assert.Contains("id=\"starred-widget\" class=\"starred-widget\"", page);
         Assert.DoesNotContain("id=\"starred-widget\" class=\"starred-widget\" aria-labelledby=\"starred-title\" hidden", page);
         Assert.Contains("id=\"starred-list\"", page);
