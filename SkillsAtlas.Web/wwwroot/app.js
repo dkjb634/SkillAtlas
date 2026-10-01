@@ -294,7 +294,7 @@ function renderSkills() {
     description.className = "skill-description";
     description.textContent = skill.shortDescription;
     copy.append(titleLine, description);
-    toggle.append(number, copy);
+    toggle.append(copy);
     toggle.addEventListener("click", () => {
       expandedSkill = expandedSkill === originalIndex ? null : originalIndex;
       renderSkills();
@@ -318,8 +318,6 @@ function renderSkills() {
     external.setAttribute("aria-hidden", "true");
     external.textContent = "↗";
     fileLink.append(fileIcon, fileName, external);
-    row.append(toggle, fileLink);
-
     const star = document.createElement("button");
     star.className = "star-skill";
     star.type = "button";
@@ -336,7 +334,7 @@ function renderSkills() {
       saveStarredSkills();
       renderSkills();
     });
-    row.append(star);
+    row.append(number, star, toggle, fileLink);
 
     const detailGrid = document.createElement("div");
     detailGrid.className = "detail-grid";
