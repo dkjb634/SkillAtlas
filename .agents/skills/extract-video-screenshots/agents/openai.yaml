@@ -1,0 +1,3 @@
+interface:
+  display_name: "Video Screenshot Extractor"
+  short_description: "Extract 10-second frames from a video by branch"
